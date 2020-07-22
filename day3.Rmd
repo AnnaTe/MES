@@ -242,7 +242,6 @@ spinned_cstockref_sc <- getC(scmodel)
 
 Now, there should be no changes in time for the different stocks in the reference data if we begin at the end of the spin up.
 
-
 ```{r}
 
 plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),1]) # DPM
@@ -251,14 +250,11 @@ plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),3]) # BIO
 plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),4]) # HUM, only very small changes seen now
 #plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),5]) # IoM
 
-
 ```
-
 
 Let's look at the scenario data.
 
 ```{r}
-
 plot(spinned_cstockref_sc[360:nrow(spinned_cstockref_sc),1]) # DPM
 plot(spinned_cstockref_sc[360:nrow(spinned_cstockref_sc),2]) # RPM
 plot(spinned_cstockref_sc[360:nrow(spinned_cstockref_sc),3]) # BIO
@@ -270,3 +266,31 @@ Changes in climate change scenario also after the spin up!
 
 
 ### 3. Decomposition rates are a fundamental parameter for soil carbon models. They can be obtained from laboratory experiments. Use the dataset “./Materials/00_experimentalData.txt” of cumulative CO2 over time to fit a one-pool model and a two-pool model. Create a function that runs the SoilR function “TwopFeedbackModel” and “OnepModel” with one parameters vector. The function has to return the CO2 released from all pools involved (read on “getAccumulatedRelease”). For the optimization of the parameters, use the modFit function of the FME package. Be aware that modFit takes a cost function that is optimized. It is probably the most convenient to define a costfunction (costf) that has one argument (parameter vector) and calculates the model output based on the parameter vector and returns the values returned from the FME function modCost. Plot the cumulative CO2 release for both models. Why does it make sense to have multi-pool models?
+
+```{r, eval= FALSE}
+exp_data <- read.delim("00_experimentalData.txt")
+
+### doesnt run, just a sketch overview, due to not enough time 
+pool_model <- function(parameter, onepool = TRUE){
+  if(onepool == TRUE){
+    model <- OnepModel(t, k, C0, In, xi = 1, solver = deSolve.lsoda.wrapper, pass = FALSE)
+  } else {
+    model <- TwopFeedbackModel(t = , ks = c(pool1, pool2), a21, a12, C0 = c(0, 0, 0, 0, FallIOM), In = C_in, xi = xi_run, solver = deSolve.lsoda.wrapper, pass = FALSE)
+  }
+  return(getAccumulatedRelease(model))
+}
+
+costf <- function(parameter, onepool = TRUE){
+  model <- pool_model(parameter, onepool = onepool)
+  mincost <- modCost(model, obs)
+  return(mincost)
+}
+
+library(FME)
+opt_CO2 <- modFit(costf, p, ..., lower = exp_data$cummCO2[1], upper = exp_data$cummCO2[21], method = c("Marq", "Port", "Newton",            "Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "Pseudo", "bobyqa"), jac = NULL, control = list(), hessian = TRUE)
+
+t <- exp_data$time
+k <- exp_data$cummCO2
+
+```
+
