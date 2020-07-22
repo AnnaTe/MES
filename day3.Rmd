@@ -32,5 +32,36 @@ BIO and HUM split depends on the clay content of the soil, that gives input to t
   * h. Environmental conditions are considered by providing parameter xi. Calculate xi as the product of the temperature and moisture effect
   * i. Use the function fW.RothC for the moisture effect (here you need clay content and topsoil organic layer thickness provided above); use column b!
   * j. Use the function fT.RothC to calculate the temperature effect
+  
+  
+ ```{r}
+refdata <- read.table("materials/reference_2000-2100.txt", header=T)
+scenariodata <- read.table("materials/rcp8.5_2000-2100.txt", header=T)
+```
+
+```{r}
+Evp=data.frame(Month=1:12, Evp=c(12, 18, 35, 58, 82, 90, 97, 84, 54, 31, 14, 10))
+Evp2 <- Evp
+
+for (i in 1:100) {
+  Evp <- rbind(Evp, Evp2)
+}
+
+refdata <- cbind(refdata, Evp$Evp)
+scenariodata <- cbind(scenariodata, Evp$Evp)
+
+```
+
+
+```{r}
+FallIOM=0.049* 69.7^(1.139) 
+```
+
+```{r}
+#?fW.RothC
+
+moisture <- fW.RothC(refdata$Precip, refdata$`Evp$Evp`, S.Thick = 25, pClay = 48, pE = 0.75, bare = FALSE) # pE is pan evaporation
+```
+
 
 ### 3. Decomposition rates are a fundamental parameter for soil carbon models. They can be obtained from laboratory experiments. Use the dataset “./Materials/00_experimentalData.txt” of cumulative CO2 over time to fit a one-pool model and a two-pool model. Create a function that runs the SoilR function “TwopFeedbackModel” and “OnepModel” with one parameters vector. The function has to return the CO2 released from all pools involved (read on “getAccumulatedRelease”). For the optimization of the parameters, use the modFit function of the FME package. Be aware that modFit takes a cost function that is optimized. It is probably the most convenient to define a costfunction (costf) that has one argument (parameter vector) and calculates the model output based on the parameter vector and returns the values returned from the FME function modCost. Plot the cumulative CO2 release for both models. Why does it make sense to have multi-pool models?
