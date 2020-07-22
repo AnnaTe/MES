@@ -34,7 +34,6 @@ BIO and HUM split depends on the clay content of the soil, that gives input to t
   * j. Use the function fT.RothC to calculate the temperature effect
   
   
-
 ```{r}
 refdata <- read.table("materials/reference_2000-2100.txt", header=T)
 scenariodata <- read.table("materials/rcp8.5_2000-2100.txt", header=T)
@@ -60,42 +59,214 @@ scenariodata <- cbind(scenariodata, Evp$Evp)
 Initial IOM:
 
 ```{r}
-FallIOM=0.049* 69.7^(1.139) 
+FallIOM=0.049* 69.7^(1.139) # 69.7 is the SOM
 ```
 
 
-Moisture effect
+Calculation of the moisture effect with the function fW.RothC
 
 ```{r}
-?fW.RothC
+#?fW.RothC
+# pE is evaporation coefficient and here set to 1
 
-moisture <- fW.RothC(refdata$Precip, refdata$`Evp$Evp`, S.Thick = 25, pClay = 48, pE = 1, bare = FALSE) # pE is pan evaporation
-# bare = true or false?
+# for the reference data
+moisture_ref <- fW.RothC(refdata$Precip, refdata$`Evp$Evp`, S.Thick = 25, 
+                         pClay = 48, pE = 1, bare = FALSE) 
 
-# Always 1 ??
+# for the scenario data
+moisture_sc <- fW.RothC(scenariodata$Precip, scenariodata$`Evp$Evp`, S.Thick = 25, 
+                        pClay = 48, pE = 1, bare = FALSE) 
+
+
 ```
 
 
-Temperature effect
+Calculation of the temperature effect with the function fT.RothC
 
 ```{r}
-?fT.RothC
+#?fT.RothC
 
-tempeff <- fT.RothC(refdata$Temp)
+# reference temp effect
+tempeff_ref <- fT.RothC(refdata$Temp)
+
+# scenario temp effect
+tempeff_sc <- fT.RothC(scenariodata$Temp)
+
+
 ```
 
-External effect from moisture and temperature effect
+
+Xi is the product of the moisture effect and the temperature effect
 
 ```{r}
-xi = data.frame("month"=1:1212 , "xi"=moisture$b*tempeff)
+# reference
+xi_ref = data.frame("month"=1:1212 , "xi"=moisture_ref$b*tempeff_ref)
 
-# model for reference data
-refmodel <- RothCModel(xi$month, ks = c(k.DPM = 10, k.RPM = 0.3, k.BIO = 0.66, k.HUM = 0.02, k.IOM = 0), C0 = c(0, 0, 0, 0, FallIOM), In = 2.7, DR = 1.44, clay = 48, xi = xi, solver = deSolve.lsoda.wrapper, pass = FALSE)
+#scenario
+xi_sc = data.frame("month"=1:1212 , "xi"=moisture_sc$b*tempeff_sc)
 
-cstockref <- getC(refmodel)
+
+#?RothCModel
+# DPM, RPM, BIO and HUM initial 0
+```
+
+Model for the reference data:
+
+```{r}
+
+refmodel <- RothCModel(xi_ref$month, ks = c(k.DPM = 10, k.RPM = 0.3, 
+            k.BIO = 0.66, k.HUM = 0.02, k.IOM = 0), C0 = c(0, 0, 0, 0, FallIOM), 
+            In = 2.7, DR = 1.44, clay = 48, xi = xi_ref, solver = deSolve.lsoda.wrapper, pass = FALSE)
+
+cstockref_ref <- getC(refmodel) # get the pools
+#head(cstockref_ref) # in the beginning
+#tail(cstockref_ref) # in the end
+
+```
+
+
+```{r}
+
+# Reference data: Stock changes
+plot(cstockref_ref[,1]) # DPM
+plot(cstockref_ref[,2]) # RPM
+plot(cstockref_ref[,3]) # BIO
+plot(cstockref_ref[,4]) # HUM, needs ~ 360 month = 30 years
+plot(cstockref_ref[,5]) # IoM # does not change at all
 
 
 ```
+
+Model for the scenario data:
+
+```{r}
+
+# scenario data
+
+scmodel <- RothCModel(xi_sc$month, ks = c(k.DPM = 10, k.RPM = 0.3, 
+           k.BIO = 0.66, k.HUM = 0.02, k.IOM = 0), C0 = c(0, 0, 0, 0, FallIOM), 
+           In = 2.7, DR = 1.44, clay = 48, xi = xi_sc, solver = deSolve.lsoda.wrapper, pass = FALSE)
+
+cstockref_sc <- getC(scmodel)
+#head(cstockref_sc)
+#tail(cstockref_sc)
+```
+
+
+```{r}
+# Scenario data: Stock changes
+plot(cstockref_sc[,1]) 
+plot(cstockref_sc[,2])
+plot(cstockref_sc[,3])
+plot(cstockref_sc[,4])
+#plot(cstockref_sc[,5])
+
+```
+
+## Spin up
++ 30 years of reference data (360 months)
+
+```{r}
+# Reference data
+spinned_up_refdata <- rbind(refdata[1:360,], refdata)
+
+# Scenariodata
+spinned_up_scenariodata <- rbind(refdata[1:360,], scenariodata)
+
+```
+
+Moisture effect for spinned up data
+
+```{r}
+
+# for the reference data
+spinned_moisture_ref <- fW.RothC(spinned_up_refdata$Precip, spinned_up_refdata$`Evp$Evp`, 
+                                 S.Thick = 25, pClay = 48, pE = 1, bare = FALSE) # pE is pan evaporation
+
+# for the scenario data
+spinned_moisture_sc <- fW.RothC(spinned_up_scenariodata$Precip, spinned_up_scenariodata$`Evp$Evp`, 
+                                S.Thick = 25, pClay = 48, pE = 1, bare = FALSE) # pE is pan evaporation
+
+
+```
+
+
+Temperature effect for spinned up data
+
+```{r}
+#?fT.RothC
+
+# reference temp effect
+spinned_tempeff_ref <- fT.RothC(spinned_up_refdata$Temp)
+
+# scenario temp effect
+spinned_tempeff_sc <- fT.RothC(spinned_up_scenariodata$Temp)
+
+
+```
+
+xi for spinned up data
+
+```{r}
+xi_ref_spinned = data.frame("month"=1:1572 , "xi"=spinned_moisture_ref$b*spinned_tempeff_ref)
+
+xi_sc_spinned = data.frame("month"=1:1572 , "xi"=spinned_moisture_sc$b*spinned_tempeff_sc)
+
+
+#?RothCModel
+
+# spinned up reference model
+
+spinned_refmodel <- RothCModel(xi_ref_spinned$month, ks = c(k.DPM = 10, k.RPM = 0.3, 
+                    k.BIO = 0.66, k.HUM = 0.02, k.IOM = 0), C0 = c(0, 0, 0, 0, FallIOM), 
+                    In = 2.7, DR = 1.44, clay = 48, xi = xi_ref_spinned, 
+                    solver = deSolve.lsoda.wrapper, pass = FALSE)
+
+spinned_cstockref_ref <- getC(spinned_refmodel)
+#head(spinned_cstockref_ref)
+#tail(spinned_cstockref_ref)
+
+
+# spinned up scenario data
+
+spinned_scmodel <- RothCModel(xi_sc_spinned$month, ks = c(k.DPM = 10, k.RPM = 0.3, 
+                   k.BIO = 0.66, k.HUM = 0.02, k.IOM = 0), C0 = c(0, 0, 0, 0, FallIOM), 
+                   In = 2.7, DR = 1.44, clay = 48, xi = xi_sc_spinned, 
+                   solver = deSolve.lsoda.wrapper, pass = FALSE)
+
+spinned_cstockref_sc <- getC(scmodel)
+#head(spinned_cstockref_sc)
+#tail(spinned_cstockref_sc)
+
+```
+
+Now, there should be no changes in time for the different stocks in the reference data if we begin at the end of the spin up.
+
+
+```{r}
+
+plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),1]) # DPM
+plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),2]) # RPM
+plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),3]) # BIO
+plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),4]) # HUM, only very small changes seen now
+#plot(spinned_cstockref_ref[360:nrow(spinned_cstockref_ref),5]) # IoM
+
+
+```
+
+
+Let's look at the scenario data.
+
+```{r}
+
+plot(spinned_cstockref_sc[360:nrow(spinned_cstockref_sc),1]) # DPM
+plot(spinned_cstockref_sc[360:nrow(spinned_cstockref_sc),2]) # RPM
+plot(spinned_cstockref_sc[360:nrow(spinned_cstockref_sc),3]) # BIO
+plot(spinned_cstockref_sc[360:nrow(spinned_cstockref_sc),4]) # HUM
+#plot(spinned_cstockref_sc[360:nrow(spinned_cstockref_sc),5]) # IoM
+```
+
+Changes in climate change scenario also after the spin up!
 
 
 ### 3. Decomposition rates are a fundamental parameter for soil carbon models. They can be obtained from laboratory experiments. Use the dataset “./Materials/00_experimentalData.txt” of cumulative CO2 over time to fit a one-pool model and a two-pool model. Create a function that runs the SoilR function “TwopFeedbackModel” and “OnepModel” with one parameters vector. The function has to return the CO2 released from all pools involved (read on “getAccumulatedRelease”). For the optimization of the parameters, use the modFit function of the FME package. Be aware that modFit takes a cost function that is optimized. It is probably the most convenient to define a costfunction (costf) that has one argument (parameter vector) and calculates the model output based on the parameter vector and returns the values returned from the FME function modCost. Plot the cumulative CO2 release for both models. Why does it make sense to have multi-pool models?
