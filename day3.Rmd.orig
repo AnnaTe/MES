@@ -33,36 +33,68 @@ BIO and HUM split depends on the clay content of the soil, that gives input to t
   * i. Use the function fW.RothC for the moisture effect (here you need clay content and topsoil organic layer thickness provided above); use column b!
   * j. Use the function fT.RothC to calculate the temperature effect
   
+<<<<<<< HEAD
+=======
   
+>>>>>>> 131cab8913a1ce9dd3831ae3748adc7d7e2f7384
 ```{r}
-refdata <- read.table("materials/reference_2000-2100.txt", header=T)
-scenariodata <- read.table("materials/rcp8.5_2000-2100.txt", header=T)
-```
+library(SoilR)
+?RothCModel
 
+#load reference and scenario from day1
+reference <- read.delim("reference_2000-2100.txt")
+rcp8.5 <- read.delim("rcp8.5_2000-2100.txt")
 
-Add evaporation:
+# provided parameter
+Evp <- data.frame(Month=1:12, Evp=c(12, 18, 35, 58, 82, 90, 97, 84, 54, 31, 14, 10))
+depth <- 25 #cm
+SOC <- 69.7 #Mg ha -1
+clay <- 48 #%
+C_in <- 2.7 #Mg ha -1 yr -1
+FallIOM <- 0.049*SOC^(1.139)
 
-```{r}
-Evp=data.frame(Month=1:12, Evp=c(12, 18, 35, 58, 82, 90, 97, 84, 54, 31, 14, 10))
-Evp2 <- Evp
+# calculation of the moisture decomposition rate
+# for the reference data
+P_ref <- reference$Precip[1:12]
 
+fW_ref <- fW.RothC(P_ref, Evp$Evp, S.Thick = 23, pClay = 48, pE = 1, bare = FALSE)
+fT_ref <- fT.RothC(Temp = reference$Temp[1:12])
+
+xi_ref <- fW_ref$b * fT_ref # df mit zeit und produkt
+xi_ref <- data.frame("month" = 1:12, xi)
+
+# multiply xi_ref to 100 years
+xi_100 <- xi_ref
 for (i in 1:100) {
-  Evp <- rbind(Evp, Evp2)
+  xi_100 <- rbind(xi_100, xi_ref)
 }
 
-refdata <- cbind(refdata, Evp$Evp)
-scenariodata <- cbind(scenariodata, Evp$Evp)
-
-```
-
-
-Initial IOM:
-
+<<<<<<< HEAD
+xi_100$month <- 1:length(xi_100$month)
+=======
 ```{r}
 FallIOM=0.049* 69.7^(1.139) # 69.7 is the SOM
 ```
+>>>>>>> 131cab8913a1ce9dd3831ae3748adc7d7e2f7384
 
+# for the simulation data
+P_rcp <- rcp8.5$Precip
 
+<<<<<<< HEAD
+Evp100 <- Evp$Evp
+for (i in 1:100) {
+  Evp100 <- cbind(Evp100, Evp$Evp)
+}
+
+fW_rcp <- fW.RothC(P_rcp, Evp100, S.Thick = 23, pClay = 48, pE = 1, bare = FALSE)
+fT_rcp <- fT.RothC(Temp = rcp8.5$Temp)
+
+xi_rcp <- fW_rcp$b * fT_rcp
+xi_rcp <- cbind(1:length(xi_rcp), xi_rcp)
+
+# run of the model
+ref_model <- RothCModel(1:length(xi_100$month), ks = c(k.DPM = 10, k.RPM = 0.3, k.BIO = 0.66, k.HUM = 0.02, k.IOM = 0), C0 = c(0, 0, 0, 0, FallIOM), In = C_in, DR = 1.44, clay = 48, xi = xi_100, solver = deSolve.lsoda.wrapper, pass = FALSE)
+=======
 Calculation of the moisture effect with the function fW.RothC
 
 ```{r}
@@ -81,7 +113,7 @@ moisture_sc <- fW.RothC(scenariodata$Precip, scenariodata$`Evp$Evp`, S.Thick = 2
 ```
 
 
-Temperature effect
+Calculation of the temperature effect with the function fT.RothC
 
 ```{r}
 #?fT.RothC
@@ -94,8 +126,43 @@ tempeff_sc <- fT.RothC(scenariodata$Temp)
 
 
 ```
+>>>>>>> 131cab8913a1ce9dd3831ae3748adc7d7e2f7384
 
+# carbonstock of reference data
+cstock_ref <- getC(ref_model)
 
+<<<<<<< HEAD
+rcp_model <- RothCModel(1:length(xi_100$month), ks = c(k.DPM = 10, k.RPM = 0.3, k.BIO = 0.66, k.HUM = 0.02, k.IOM = 0), C0 = c(0, 0, 0, 0, FallIOM), In = C_in, DR = 1.44, clay = 48, xi = as.data.frame(xi_rcp), solver = deSolve.lsoda.wrapper, pass = FALSE)
+
+# carbonstock of model
+cstock_rcp <- getC(rcp_model)
+
+```
+
+### 3. Decomposition rates are a fundamental parameter for soil carbon models. They can be obtained from laboratory experiments. Use the dataset “./Materials/00_experimentalData.txt” of cumulative CO2 over time to fit a one-pool model and a two-pool model. Create a function that runs the SoilR function “TwopFeedbackModel” and “OnepModel” with one parameters vector. The function has to return the CO2 released from all pools involved (read on “getAccumulatedRelease”). For the optimization of the parameters, use the modFit function of the FME package. Be aware that modFit takes a cost function that is optimized. It is probably the most convenient to define a costfunction (costf) that has one argument (parameter vector) and calculates the model output based on the parameter vector and returns the values returned from the FME function modCost. Plot the cumulative CO2 release for both models. Why does it make sense to have multi-pool models?
+
+```{r, eval= FALSE}
+exp_data <- read.delim("00_experimentalData.txt")
+
+### doesnt run, just a sketch overview, due to not enough time 
+pool_model <- function(parameter, onepool = TRUE){
+  if(onepool == TRUE){
+    model <- OnepModel(t, k, C0, In, xi = 1, solver = deSolve.lsoda.wrapper, pass = FALSE)
+  } else {
+    model <- TwopFeedbackModel(t = , ks = c(pool1, pool2), a21, a12, C0 = c(0, 0, 0, 0, FallIOM), In = C_in, xi = xi_run, solver = deSolve.lsoda.wrapper, pass = FALSE)
+  }
+  return(getAccumulatedRelease(model))
+}
+
+costf <- function(parameter, onepool = TRUE){
+  model <- pool_model(parameter, onepool = onepool)
+  mincost <- modCost(model, obs)
+  return(mincost)
+}
+
+library(FME)
+opt_CO2 <- modFit(costf, p, ..., lower = exp_data$cummCO2[1], upper = exp_data$cummCO2[21], method = c("Marq", "Port", "Newton",            "Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN", "Pseudo", "bobyqa"), jac = NULL, control = list(), hessian = TRUE)
+=======
 Xi is the product of the moisture effect and the temperature effect
 
 ```{r}
@@ -133,10 +200,15 @@ plot(cstockref_ref[,2]) # RPM
 plot(cstockref_ref[,3]) # BIO
 plot(cstockref_ref[,4]) # HUM, needs ~ 360 month = 30 years
 plot(cstockref_ref[,5]) # IoM # does not change at all
+>>>>>>> 131cab8913a1ce9dd3831ae3748adc7d7e2f7384
 
+t <- exp_data$time
+k <- exp_data$cummCO2
 
 ```
 
+<<<<<<< HEAD
+=======
 Model for the scenario data:
 
 ```{r}
@@ -270,3 +342,4 @@ Changes in climate change scenario also after the spin up!
 
 
 ### 3. Decomposition rates are a fundamental parameter for soil carbon models. They can be obtained from laboratory experiments. Use the dataset “./Materials/00_experimentalData.txt” of cumulative CO2 over time to fit a one-pool model and a two-pool model. Create a function that runs the SoilR function “TwopFeedbackModel” and “OnepModel” with one parameters vector. The function has to return the CO2 released from all pools involved (read on “getAccumulatedRelease”). For the optimization of the parameters, use the modFit function of the FME package. Be aware that modFit takes a cost function that is optimized. It is probably the most convenient to define a costfunction (costf) that has one argument (parameter vector) and calculates the model output based on the parameter vector and returns the values returned from the FME function modCost. Plot the cumulative CO2 release for both models. Why does it make sense to have multi-pool models?
+>>>>>>> 131cab8913a1ce9dd3831ae3748adc7d7e2f7384
