@@ -1,0 +1,56 @@
+---
+title: 'Day 7: N Cycle'
+author: "Anna Tenberg, Brigitte Häuser, Niklas Moser"
+date: "28 7 2020"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Day 7: N Budget
+
+### 1. What are the main components of an ecosystem N budget?
+
+Main Components of an ecosystem N Budget are the different states of Nitrogen in the cycle as Ammonium ($NH_{4}^{+}$), Ammonia ($NH_3$), Nitrate ($NO_2$) and Nitrogen ($N_2$).
+
+### 2. What are the major N cycling processes in soils? Briefly describe the N cycle in ecosystems.
+
+#### Nitrification: 
+The oxidation of Ammonium or rather Ammonia to Nitrate via Nitrite by nitrifying microorganisms in the soil. This aerob process is dependent on the microbal activity influenced by water availability, pH and temperature in the soil.
+
+$$ 
+NH_4^+ \rightarrow NH_3 \rightarrow NO_2⁻  \rightarrow NO_3^-
+$$
+
+#### Denitrification:
+The reduction of Nitrate to Nitrogen. The anaerob reaction is dependend on water filled pores as there needs to be an absence of oxygen and ratio and availability of Nitrate and Carbon. It is a microbial and enzymatic reaction of divers microbes using the N-Molecules as an oxygen source. With non-ideal conditions the reaction will not complete totally and Nitrogen oxides are released in the atmosphere. 
+
+$$
+NO_3^{-} \rightarrow N_2O \rightarrow NO \rightarrow N_2 
+$$
+
+#### Ammonia volantilization:
+
+The Ammonia volantilization the the encymatic transformation of Urea ($NH_2(CO)NH_2$) to Ammonia and Ammonium. Urea is mostly used in manure and synthetic fertilizers. With the volantilization Ammonium is made available for the plant and microbes but Ammonia is also possibly leached to ground water and other water bodies.
+
+#### Ammonification:
+
+The process of ammonification describes the transformation of Nitrogen from soil organic matter by microorganisms to mineral Ammonium. Through this it is made available for plant uptake and further reactions like nitrification.
+
+#### N2 fixation:
+
+Nitrogen from the atmosphere is fixated industrially through haber-bosch process in the production of mineral fertilizers and naturally in the biological fixation through n-fixationg microbes.
+
+$$
+N_2 + 3 H_2 \rightarrow 2 NH_3
+$$
+```{r, echo=FALSE, out.width='\\linewidth', fig.cap="N-cycle in an ecosystem"}
+knitr::include_graphics("n-cycle.png")
+
+```
+
